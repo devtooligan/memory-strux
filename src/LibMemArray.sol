@@ -47,10 +47,18 @@ library LibMemArray {
     function create() internal pure returns (MemArray newArray) {
         // linked lists always have a head node which does not contain a value
         // the tail, on the other hand, represents the last node (or head if size == 0)
-        Node memory head;
-        LinkedList memory list = LinkedList({size: 0, head: head, tail: head});
         assembly {
-            newArray := list
+            // Grab some free memory for the linked list fat pointer
+            let ptr := mload(0x40)
+            // Grab some free memory for the head node fat pointer
+            let head := add(ptr, 0x60)
+            // On initialization, the head and the tail point to the allocated head.
+            mstore(add(ptr, 0x20), head)
+            mstore(add(ptr, 0x40), head)
+            // Update the free memory pointer after 160 bytes of allocation
+            mstore(0x40, add(ptr, 0xA0))
+            // Return the linked list fat pointer
+            newArray := ptr
         }
     }
 
