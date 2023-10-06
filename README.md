@@ -21,9 +21,9 @@ MemArray myArray = LibMemArray.create();
 
 // push, pop, get
 myArray.push(0x69);  // [0x69]
-myArray.push(0x69);  // [0x69, 0x420]
+myArray.push(0x420);  // [0x69, 0x420]
 myArray.get(1); // 0x420
-myArray.pop();  // [0x69]
+myArray.pop();  // (returns 0x420) [0x69]
 
 // to/from legacy array
 uint[] memory legacyArray = myArray.toArray();
