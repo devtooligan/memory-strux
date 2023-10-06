@@ -7,7 +7,7 @@ import "../src/LibMemArray.sol";
 contract LibMemArrayTest is Test {
     using LibMemArray for *;
 
-    function testArr() public {
+    function testArr() public pure {
         MemArray arr = LibMemArray.create();
         arr.push(0x69);
         require(arr.get(0) == 0x69, "get 0");
@@ -37,10 +37,5 @@ contract LibMemArrayTest is Test {
         require(arr2.get(0) == 0x6000, "legacy get 0");
         require(arr2.get(1) == 0x6111, "legacy get 1");
         require(arr2.get(2) == 0x6222, "legacy get 2");
-
-
-
-
-
     }
 }
