@@ -7,7 +7,7 @@ pragma solidity ^0.8.20;
    Example: MemArray myArray = [0x123, 0x456]
 
   ┌───────────────────────────────────────┬───────────────────────┬───────────────────────────┬────────────────────────┬───────────────────────┐
-  │MemArray myArray                      │myArray                │ x-x-x-x-x-x-x-x-x-x-x-x-  │myArray[0] = 0x123      │myArray[1] = 0x456     │
+  │MemArray myArray                       │myArray                │ x-x-x-x-x-x-x-x-x-x-x-x-  │myArray[0] = 0x123      │myArray[1] = 0x456     │
   │LINKED LIST                            │NODE - HEAD            │ MEMORY USED BY SOMETHING  │NODE - CUTOFF           │NODE - TAIL            │
   │                                       │contains no value      │ ELSE - UNRELATED TO THIS  │                        │tail has no next       │
   ├─────────────┬─────────────┬───────────┼─────────────┬─────────┼─────────────┬─────────────┼─────────────┬──────────┼───────────┬───────────┤
@@ -193,9 +193,48 @@ library LibMemArray {
         // create linked list
         newArray = create();
 
-        // iterate through array
-        for (uint256 i = 0; i < arr.length; i++) {
-            push(newArray, arr[i]); // this could be optimized a lot
+        // Because we've allocated a new linked list, we can safely assume that the contiguous
+        // memory following it is clean. Iterate through the array and directly copy the values
+        // into the linked list.
+        assembly {
+            // Cache the free memory pointer
+            let freeMem := mload(0x40)
+
+            // Grab the pointer of the current tail in memory.
+            let tailPtr := add(newArray, 0x40)
+
+            // Grab the length of the array.
+            let arrLen := mload(arr)
+
+            // Grab the pointer to the data within `arr`
+            let arrData := add(arr, 0x20)
+
+            // Loop through each element in `arr` and copy it into the linked list.
+            for {
+                let i := 0x00
+                let curNodePtr := add(tailPtr, 0x20)
+            } lt(i, arrLen) {
+                i := add(i, 0x01)
+                curNodePtr := add(curNodePtr, 0x40)
+            } {
+                // Allocate a new node and assign the value from `arr` to it.
+                let nextNodePtr := add(curNodePtr, 0x40)
+                mstore(add(nextNodePtr, 0x20), mload(add(arrData, shl(0x05, i))))
+
+                // Update the previous node's `next` word to the newly allocated node's ptr.
+                mstore(curNodePtr, nextNodePtr)
+
+                // Update the tail pointer's value to the newly allocated node's ptr.
+                mstore(tailPtr, nextNodePtr)
+            }
+
+            // Update the length of the linked list.
+            mstore(newArray, arrLen)
+            
+            // Update the free memory pointer to account for the memory allocated above. Note that
+            // `create()` updates the free memory pointer as well by 160 bytes (the size of the
+            // linked list fat pointer).
+            mstore(0x40, add(freeMem, shl(0x06, arrLen)))
         }
     }
 
