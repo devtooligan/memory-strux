@@ -43,4 +43,26 @@ contract LibMemArrayTest is Test {
 
 
     }
+
+    function testFuzz_fromArrayMemorySafety(uint256[] memory _from) public {
+        // Grab the size of the array
+        uint256 size = _from.length;
+        
+        // Grab the free memory pointer
+        uint64 freeMemPtr;
+        assembly {
+            freeMemPtr := mload(0x40)
+        }
+        
+        // The following operation should expand memory by:
+        // 1. 96 bytes for the linked list fat pointer
+        // 2. 64 bytes for the head node
+        // 3. 64 * N bytes for the array elements.
+        // Totaling 96 + 64 + 64 * N bytes.
+        //
+        // The only memory that this operation should be allowed to touch is in
+        // the range [free_mem_ptr, free_mem_ptr + 96 + 64 + 64 * N).
+        vm.expectSafeMemory(freeMemPtr, freeMemPtr + 96 + 64 + 64 * uint64(size));
+        _from.fromArray();
+    }
 }
