@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {Test, console2 as console} from "forge-std/Test.sol";
 import "../src/LibMemDict.sol";
 
-contract LibMemArrayTest is Test {
+contract LibMemDictTest is Test {
     using LibMemDict for *;
 
     mapping(uint => uint) public someMap;
